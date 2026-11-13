@@ -1,11 +1,17 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Free Avatar Studio</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#eef2ff;font:15px system-ui,Arial}header{padding:16px 18px;background:#111a31;display:flex;justify-content:space-between;align-items:center}h1{font-size:19px;margin:0}small{color:#9ba9c7}.layout{display:flex;flex-direction:column;gap:12px;padding:12px;max-width:900px;margin:auto}#stage{height:46vh;min-height:290px;max-height:520px;background:#111a31;border:1px solid #344466;border-radius:18px;overflow:hidden;position:relative}#stage canvas{width:100%;height:100%;display:block}.tag{position:absolute;left:12px;top:12px;background:#101a31cc;padding:6px 10px;border-radius:20px;font-size:12px;color:#c5d4f4}.panel{background:#141e35;border:1px solid #2c3b5c;border-radius:16px;padding:14px}label{display:block;color:#b9c7e3;font-size:13px;margin-bottom:7px}textarea{width:100%;min-height:82px;background:#0c1428;color:white;border:1px solid #344466;border-radius:10px;padding:11px;font:inherit;resize:vertical}button,.filelabel{border:0;border-radius:10px;padding:11px 14px;background:#4778e8;color:white;font-weight:650;font-size:14px;cursor:pointer}button.secondary{background:#293957}button:disabled{opacity:.45}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}input[type=file]{display:none}.status{font-size:12px;color:#9fb0d2;margin-top:8px}.hint{font-size:12px;color:#93a3c3;line-height:1.5}.meter{height:5px;background:#283958;border-radius:8px;overflow:hidden;margin-top:9px}.meter span{display:block;height:100%;width:0;background:#62d6a4}
+*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#eef2ff;font:15px system-ui,Arial}header{padding:16px 18px;background:#111a31;display:flex;justify-content:space-between;align-items:center}h1{font-size:19px;margin:0}small{color:#9ba9c7}.layout{display:flex;flex-direction:column;gap:12px;padding:12px;max-width:900px;margin:auto}#stage{height:46vh;min-height:290px;max-height:520px;background:#111a31;border:1px solid #344466;border-radius:18px;overflow:hidden;position:relative}#stage canvas{width:100%;height:100%;display:block}#photoCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#111a31} .rangeRow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:10px}.rangeRow input{grid-column:1/-1;width:100%}.tag{position:absolute;left:12px;top:12px;background:#101a31cc;padding:6px 10px;border-radius:20px;font-size:12px;color:#c5d4f4}.panel{background:#141e35;border:1px solid #2c3b5c;border-radius:16px;padding:14px}label{display:block;color:#b9c7e3;font-size:13px;margin-bottom:7px}textarea{width:100%;min-height:82px;background:#0c1428;color:white;border:1px solid #344466;border-radius:10px;padding:11px;font:inherit;resize:vertical}button,.filelabel{border:0;border-radius:10px;padding:11px 14px;background:#4778e8;color:white;font-weight:650;font-size:14px;cursor:pointer}button.secondary{background:#293957}button:disabled{opacity:.45}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}input[type=file]{display:none}.status{font-size:12px;color:#9fb0d2;margin-top:8px}.hint{font-size:12px;color:#93a3c3;line-height:1.5}.meter{height:5px;background:#283958;border-radius:8px;overflow:hidden;margin-top:9px}.meter span{display:block;height:100%;width:0;background:#62d6a4}
 </style></head><body>
 <header><div><h1>Free Avatar Studio</h1><small>3D talking character • device speech</small></div><small>v1.0</small></header>
 <main class="layout">
-<section id="stage"><div class="tag">LIVE 3D AVATAR</div></section>
+<section id="stage"><div class="tag" id="stageTag">LIVE 3D AVATAR</div><canvas id="photoCanvas"></canvas></section>
+<section class="panel"><label>Use your own photo as the talking avatar</label><label class="filelabel" for="portraitFile">Upload a face photo</label><input id="portraitFile" type="file" accept="image/*"><div class="actions"><button id="use3d" class="secondary">Switch to 3D avatar</button></div>
+<p class="hint">Choose a clear, front-facing face photo. The app animates a mouth overlay in sync with speech or uploaded audio. Adjust the mouth position below if needed.</p>
+<div class="rangeRow"><label for="mouthX">Mouth left / right</label><span id="mouthXVal">50%</span><input id="mouthX" type="range" min="15" max="85" value="50"></div>
+<div class="rangeRow"><label for="mouthY">Mouth up / down</label><span id="mouthYVal">68%</span><input id="mouthY" type="range" min="35" max="90" value="68"></div>
+<div class="rangeRow"><label for="mouthSize">Mouth width</label><span id="mouthSizeVal">13%</span><input id="mouthSize" type="range" min="5" max="25" value="13"></div>
+</section>
 <section class="panel"><label for="script">Type something for your avatar to say</label><textarea id="script" maxlength="3000" placeholder="Hello! Welcome to my video..."></textarea><div class="actions"><button id="speak">▶ Speak</button><button class="secondary" id="stop">Stop</button><button class="secondary" id="wave">Wave</button><button class="secondary" id="walk">Walk</button></div></section>
 <section class="panel"><label>Or upload an audio file</label><label class="filelabel" for="audio">Choose audio (MP3 / WAV / M4A)</label><input id="audio" type="file" accept="audio/*"><div class="actions"><button id="playAudio" class="secondary" disabled>Play audio</button><button id="stopAudio" class="secondary" disabled>Stop audio</button></div><div class="meter"><span id="meter"></span></div><div class="status" id="filename">No audio selected</div></section>
 <section class="panel"><label>Record your avatar video</label><div class="actions"><button id="record">● Start recording</button><button id="finish" class="secondary" disabled>Finish &amp; save WebM</button></div><p class="hint">Records the live 3D canvas as WebM. Uploaded audio may be included where the WebView supports audio-track capture. Text-to-speech audio is not mixed into the export in this first version.</p><div class="status" id="status">Starting 3D scene…</div></section>
@@ -16,6 +22,9 @@
 const stage=document.getElementById('stage'),statusEl=document.getElementById('status');
 function showMessage(s){statusEl.textContent=s}
 let scene,camera,renderer,head,mouth,arms=[],legs=[],talking=false,mode='idle',clock,analyser,source,audioCtx,mediaEl,recorder,chunks=[],recordStream;
+const photoCanvas=document.getElementById('photoCanvas'),photoCtx=photoCanvas.getContext('2d');
+let portraitImage=null,photoMode=false,audioLevel=0,photoAnimFrame=0;
+let mouthX=0.50,mouthY=0.68,mouthWidth=0.13;
 function mat(c,r=.7){return new THREE.MeshStandardMaterial({color:c,roughness:r})}
 function sphere(p,x,y,z,sx,sy,sz,m){const o=new THREE.Mesh(new THREE.SphereGeometry(1,24,18),m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);p.add(o);return o}
 function init3d(){
@@ -35,17 +44,67 @@ function init3d(){
  const grid=new THREE.GridHelper(10,20,0x43577c,0x263653);grid.position.y=-1.75;scene.add(grid);
  clock=new THREE.Clock();
  function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();body.position.y=.05+Math.sin(t*2)*.035;head.rotation.y=Math.sin(t*.65)*.08;mouth.scale.y=(talking||mode==='walk')?.025+Math.abs(Math.sin(t*13))*.07:.018;arms.forEach(o=>{o.a.rotation.z=o.side*(mode==='wave'?.9+Math.sin(t*8)*.35:.15);o.f.rotation.z=o.side*(mode==='wave'?-.3:0)});legs.forEach(o=>{const swing=mode==='walk'?Math.sin(t*7)*.45:0;o.t.rotation.x=swing;o.s.rotation.x=Math.max(0,-swing)*.7});renderer.render(scene,camera)}
- animate();window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight)});showMessage('Avatar ready.');
+ animate();window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight);if(photoMode)fitPortraitCanvas()});showMessage('Avatar ready.');
 }
-window.setTalking=v=>{talking=v};window.showMessage=showMessage;
+function fitPortraitCanvas(){
+ const w=stage.clientWidth,h=stage.clientHeight,dpr=Math.min(window.devicePixelRatio||1,2);
+ photoCanvas.width=Math.max(1,Math.round(w*dpr));photoCanvas.height=Math.max(1,Math.round(h*dpr));
+ drawPortrait();
+}
+function drawPortrait(){
+ if(!portraitImage||!photoCtx)return;
+ const cw=photoCanvas.width,ch=photoCanvas.height;
+ photoCtx.clearRect(0,0,cw,ch);
+ const scale=Math.min(cw/portraitImage.width,ch/portraitImage.height);
+ const iw=portraitImage.width*scale,ih=portraitImage.height*scale,ix=(cw-iw)/2,iy=(ch-ih)/2;
+ photoCtx.drawImage(portraitImage,ix,iy,iw,ih);
+ const mx=ix+iw*mouthX,my=iy+ih*mouthY,mw=iw*mouthWidth,mh=Math.max(7*scale,iw*.022);
+ // Sample nearby skin tone to cover the still mouth before drawing the animated opening.
+ let skinColor='#b77f68';
+ try{const p=photoCtx.getImageData(mx,my-mh*1.5,1,1).data;skinColor='rgb('+p[0]+','+p[1]+','+p[2]+')'}catch(e){}
+ photoCtx.save();
+ photoCtx.fillStyle=skinColor;photoCtx.beginPath();photoCtx.ellipse(mx,my,mw*.57,mh*1.55,0,0,Math.PI*2);photoCtx.fill();
+ const level=talking?Math.max(.16,.25+audioLevel*.75):0;
+ if(level>0){
+   photoCtx.fillStyle='#35151b';photoCtx.strokeStyle='#6e3039';photoCtx.lineWidth=Math.max(1,iw*.003);
+   photoCtx.beginPath();photoCtx.ellipse(mx,my,mw*.43,mh*(.22+level*1.45),0,0,Math.PI*2);photoCtx.fill();photoCtx.stroke();
+   photoCtx.fillStyle='#f0c7bd';photoCtx.beginPath();photoCtx.ellipse(mx,my-mh*(.12+level*.48),mw*.30,mh*.17,0,0,Math.PI*2);photoCtx.fill();
+ }
+ photoCtx.restore();
+}
+function photoLoop(){if(!photoMode)return;drawPortrait();photoAnimFrame=requestAnimationFrame(photoLoop)}
+function setPhotoMode(on){
+ photoMode=on;
+ if(renderer&&renderer.domElement)renderer.domElement.style.display=on?'none':'block';
+ photoCanvas.style.display=on?'block':'none';
+ document.getElementById('stageTag').textContent=on?'UPLOADED PHOTO AVATAR':'LIVE 3D AVATAR';
+ if(on){fitPortraitCanvas();cancelAnimationFrame(photoAnimFrame);photoLoop()}
+ else cancelAnimationFrame(photoAnimFrame);
+}
+document.getElementById('portraitFile').addEventListener('change',e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ if(!file.type.startsWith('image/')){showMessage('Please choose an image file.');return}
+ const url=URL.createObjectURL(file),img=new Image();
+ img.onload=()=>{portraitImage=img;mouthX=.5;mouthY=.68;mouthWidth=.13;
+   document.getElementById('mouthX').value=50;document.getElementById('mouthY').value=68;document.getElementById('mouthSize').value=13;
+   document.getElementById('mouthXVal').textContent='50%';document.getElementById('mouthYVal').textContent='68%';document.getElementById('mouthSizeVal').textContent='13%';
+   setPhotoMode(true);showMessage('Photo loaded. Adjust the mouth position sliders to align the mouth.');URL.revokeObjectURL(url)};
+ img.onerror=()=>{showMessage('Could not load that image. Try another photo.');URL.revokeObjectURL(url)};
+ img.src=url;
+});
+document.getElementById('use3d').onclick=()=>setPhotoMode(false);
+[['mouthX','mouthXVal',v=>mouthX=v/100],['mouthY','mouthYVal',v=>mouthY=v/100],['mouthSize','mouthSizeVal',v=>mouthWidth=v/100]].forEach(([id,label,setter])=>{
+ const el=document.getElementById(id);el.addEventListener('input',()=>{setter(Number(el.value));document.getElementById(label).textContent=el.value+'%';drawPortrait()});
+});
+window.setTalking=v=>{talking=v;if(!v)audioLevel=0};window.showMessage=showMessage;
 document.getElementById('speak').onclick=()=>{const s=document.getElementById('script').value.trim();if(!s)return showMessage('Enter some text first.');if(window.Android)Android.speak(s);else{const u=new SpeechSynthesisUtterance(s);u.onstart=()=>setTalking(true);u.onend=()=>setTalking(false);speechSynthesis.speak(u)}};
 document.getElementById('stop').onclick=()=>{if(window.Android)Android.stop();if(window.speechSynthesis)speechSynthesis.cancel();setTalking(false)};
 document.getElementById('wave').onclick=()=>{mode='wave';setTimeout(()=>{if(mode==='wave')mode='idle'},3500)};
 document.getElementById('walk').onclick=()=>{mode='walk';setTimeout(()=>{if(mode==='walk')mode='idle'},4000)};
 document.getElementById('audio').onchange=e=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);if(mediaEl){mediaEl.pause();URL.revokeObjectURL(mediaEl.src)}mediaEl=new Audio(url);mediaEl.onended=()=>setTalking(false);document.getElementById('playAudio').disabled=false;document.getElementById('stopAudio').disabled=false;document.getElementById('filename').textContent=f.name;showMessage('Audio ready. Press Play audio.')};
-document.getElementById('playAudio').onclick=async()=>{if(!mediaEl)return;try{await mediaEl.play();setTalking(true);if(!audioCtx){audioCtx=new AudioContext();source=audioCtx.createMediaElementSource(mediaEl);analyser=audioCtx.createAnalyser();source.connect(analyser);analyser.connect(audioCtx.destination)}const data=new Uint8Array(analyser.frequencyBinCount);const tick=()=>{if(!mediaEl||mediaEl.paused)return;analyser.getByteFrequencyData(data);const v=data.reduce((a,b)=>a+b,0)/data.length;document.getElementById('meter').style.width=Math.min(100,v/1.7)+'%';mouth.scale.y=.02+v/1000;requestAnimationFrame(tick)};tick()}catch(e){showMessage('Could not play audio: '+e.message)}};
+document.getElementById('playAudio').onclick=async()=>{if(!mediaEl)return;try{await mediaEl.play();setTalking(true);if(!audioCtx){audioCtx=new AudioContext();source=audioCtx.createMediaElementSource(mediaEl);analyser=audioCtx.createAnalyser();source.connect(analyser);analyser.connect(audioCtx.destination)}const data=new Uint8Array(analyser.frequencyBinCount);const tick=()=>{if(!mediaEl||mediaEl.paused)return;analyser.getByteFrequencyData(data);const v=data.reduce((a,b)=>a+b,0)/data.length;audioLevel=Math.min(1,v/75);document.getElementById('meter').style.width=Math.min(100,v/1.7)+'%';mouth.scale.y=.02+v/1000;if(photoMode)drawPortrait();requestAnimationFrame(tick)};tick()}catch(e){showMessage('Could not play audio: '+e.message)}};
 document.getElementById('stopAudio').onclick=()=>{mediaEl?.pause();setTalking(false);document.getElementById('meter').style.width='0%'};
-document.getElementById('record').onclick=()=>{if(!renderer)return;try{chunks=[];recordStream=renderer.domElement.captureStream(30);if(mediaEl&&mediaEl.captureStream){const a=mediaEl.captureStream();a.getAudioTracks().forEach(t=>recordStream.addTrack(t))}recorder=new MediaRecorder(recordStream,{mimeType:'video/webm'});recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{const blob=new Blob(chunks,{type:'video/webm'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='avatar-video.webm';a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);showMessage('Video saved as WebM.')};recorder.start();document.getElementById('record').disabled=true;document.getElementById('finish').disabled=false;showMessage('Recording…')}catch(e){showMessage('Recording unsupported: '+e.message)}};
+document.getElementById('record').onclick=()=>{if(!renderer)return;try{chunks=[];recordStream=(photoMode?photoCanvas:renderer.domElement).captureStream(30);if(mediaEl&&mediaEl.captureStream){const a=mediaEl.captureStream();a.getAudioTracks().forEach(t=>recordStream.addTrack(t))}recorder=new MediaRecorder(recordStream,{mimeType:'video/webm'});recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{const blob=new Blob(chunks,{type:'video/webm'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='avatar-video.webm';a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);showMessage('Video saved as WebM.')};recorder.start();document.getElementById('record').disabled=true;document.getElementById('finish').disabled=false;showMessage('Recording…')}catch(e){showMessage('Recording unsupported: '+e.message)}};
 document.getElementById('finish').onclick=()=>{if(recorder&&recorder.state!=='inactive')recorder.stop();document.getElementById('record').disabled=false;document.getElementById('finish').disabled=true};
 init3d();
 </script></body></html>
