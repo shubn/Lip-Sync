@@ -27,8 +27,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = true
         webView.webViewClient = WebViewClient()
         webView.addJavascriptInterface(AndroidBridge(), "Android")
+
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 view: WebView?,
@@ -38,30 +40,28 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 fileCallback?.onReceiveValue(null)
                 fileCallback = callback
 
-                // Respect the HTML input's accept attribute so image and audio
-                // inputs open the correct Android document picker filter.
-                val acceptedTypes = params?.acceptTypes
+                val accepted = params?.acceptTypes
                     ?.flatMap { it.split(",") }
-                    ?.map { it.trim() }
-                    ?.filter { it.isNotEmpty() }
-                    ?.distinct()
+                    ?.map { it.trim().lowercase(Locale.ROOT) }
+                    ?.filter { it.isNotBlank() }
                     .orEmpty()
 
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                val wantsImage = accepted.any { it.startsWith("image/") }
+                val wantsAudio = accepted.any { it.startsWith("audio/") }
+
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
-                    if (acceptedTypes.size == 1) {
-                        type = acceptedTypes[0]
-                    } else if (acceptedTypes.isNotEmpty()) {
-                        type = "*/*"
-                        putExtra(Intent.EXTRA_MIME_TYPES, acceptedTypes.toTypedArray())
-                    } else {
-                        type = "*/*"
+                    type = when {
+                        wantsImage && !wantsAudio -> "image/*"
+                        wantsAudio && !wantsImage -> "audio/*"
+                        else -> "*/*"
                     }
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 
                 return try {
-                    startActivityForResult(intent, pickFile)
+                    val chooserTitle = if (wantsImage) "Choose a photo" else "Choose an audio file"
+                    startActivityForResult(Intent.createChooser(intent, chooserTitle), pickFile)
                     true
                 } catch (e: Exception) {
                     fileCallback?.onReceiveValue(null)
@@ -70,6 +70,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 }
             }
         }
+
         setContentView(webView)
         webView.loadUrl("file:///android_asset/index.html")
     }
@@ -118,17 +119,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == pickFile) {
-            val uri = if (resultCode == Activity.RESULT_OK) data?.data else null
-            if (uri != null) {
-                try {
-                    contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (_: Exception) {
-                    // Some document providers do not offer persistable grants.
-                }
-                fileCallback?.onReceiveValue(arrayOf(uri))
+            val selectedUri = if (resultCode == Activity.RESULT_OK) {
+                data?.data ?: data?.clipData?.getItemAt(0)?.uri
+            } else null
+
+            if (selectedUri != null) {
+                fileCallback?.onReceiveValue(arrayOf(selectedUri))
             } else {
                 fileCallback?.onReceiveValue(null)
             }
