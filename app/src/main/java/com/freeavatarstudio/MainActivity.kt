@@ -18,7 +18,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var fileCallback: ValueCallback<Array<Uri>>? = null
-    private val pickAudio = 1001
+    private val pickFile = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,15 +30,44 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         webView.webViewClient = WebViewClient()
         webView.addJavascriptInterface(AndroidBridge(), "Android")
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onShowFileChooser(view: WebView?, callback: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
+            override fun onShowFileChooser(
+                view: WebView?,
+                callback: ValueCallback<Array<Uri>>?,
+                params: FileChooserParams?
+            ): Boolean {
                 fileCallback?.onReceiveValue(null)
                 fileCallback = callback
+
+                // Respect the HTML input's accept attribute so image and audio
+                // inputs open the correct Android document picker filter.
+                val acceptedTypes = params?.acceptTypes
+                    ?.flatMap { it.split(",") }
+                    ?.map { it.trim() }
+                    ?.filter { it.isNotEmpty() }
+                    ?.distinct()
+                    .orEmpty()
+
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "audio/*"
+                    if (acceptedTypes.size == 1) {
+                        type = acceptedTypes[0]
+                    } else if (acceptedTypes.isNotEmpty()) {
+                        type = "*/*"
+                        putExtra(Intent.EXTRA_MIME_TYPES, acceptedTypes.toTypedArray())
+                    } else {
+                        type = "*/*"
+                    }
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                startActivityForResult(intent, pickAudio)
-                return true
+
+                return try {
+                    startActivityForResult(intent, pickFile)
+                    true
+                } catch (e: Exception) {
+                    fileCallback?.onReceiveValue(null)
+                    fileCallback = null
+                    false
+                }
             }
         }
         setContentView(webView)
@@ -50,22 +79,34 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             ttsReady = true
             tts?.language = Locale.getDefault()
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(id: String?) = runOnUiThread { webView.evaluateJavascript("window.setTalking(true)", null) }
-                override fun onDone(id: String?) = runOnUiThread { webView.evaluateJavascript("window.setTalking(false)", null) }
+                override fun onStart(id: String?) = runOnUiThread {
+                    webView.evaluateJavascript("window.setTalking(true)", null)
+                }
+                override fun onDone(id: String?) = runOnUiThread {
+                    webView.evaluateJavascript("window.setTalking(false)", null)
+                }
                 @Deprecated("Deprecated in Java")
-                override fun onError(id: String?) = runOnUiThread { webView.evaluateJavascript("window.setTalking(false)", null) }
+                override fun onError(id: String?) = runOnUiThread {
+                    webView.evaluateJavascript("window.setTalking(false)", null)
+                }
             })
         }
     }
 
     inner class AndroidBridge {
-        @JavascriptInterface fun speak(text: String) {
+        @JavascriptInterface
+        fun speak(text: String) {
             runOnUiThread {
-                if (ttsReady) tts?.speak(text.take(3000), TextToSpeech.QUEUE_FLUSH, null, "avatar-utterance")
-                else webView.evaluateJavascript("window.showMessage('Text-to-speech is not ready yet')", null)
+                if (ttsReady) {
+                    tts?.speak(text.take(3000), TextToSpeech.QUEUE_FLUSH, null, "avatar-utterance")
+                } else {
+                    webView.evaluateJavascript("window.showMessage('Text-to-speech is not ready yet')", null)
+                }
             }
         }
-        @JavascriptInterface fun stop() {
+
+        @JavascriptInterface
+        fun stop() {
             runOnUiThread {
                 tts?.stop()
                 webView.evaluateJavascript("window.setTalking(false)", null)
@@ -76,17 +117,28 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == pickAudio) {
+        if (requestCode == pickFile) {
             val uri = if (resultCode == Activity.RESULT_OK) data?.data else null
             if (uri != null) {
-                try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) {}
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {
+                    // Some document providers do not offer persistable grants.
+                }
                 fileCallback?.onReceiveValue(arrayOf(uri))
-            } else fileCallback?.onReceiveValue(null)
+            } else {
+                fileCallback?.onReceiveValue(null)
+            }
             fileCallback = null
         }
     }
 
     override fun onDestroy() {
+        fileCallback?.onReceiveValue(null)
+        fileCallback = null
         tts?.stop()
         tts?.shutdown()
         webView.destroy()
